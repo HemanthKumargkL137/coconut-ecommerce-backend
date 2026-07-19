@@ -18,8 +18,8 @@ async function startServer() {
 
     console.log("Database connected successfully!");
 
-    await sequelize.sync();
-    console.log("Database synced successfully!");
+    // The production schema is managed through migrations. Running sync() here
+    // tries to recreate existing foreign keys every time the server restarts.
 
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
