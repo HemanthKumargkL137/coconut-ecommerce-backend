@@ -18,6 +18,9 @@ async function startServer() {
 
     console.log("Database connected successfully!");
 
+    await sequelize.sync();
+    console.log("Database synced successfully!");
+
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });

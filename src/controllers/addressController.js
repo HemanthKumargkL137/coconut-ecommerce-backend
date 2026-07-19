@@ -4,6 +4,14 @@ exports.getAddresses = async (req, res) => {
     try{
         const {userId} = req.query;
 
+        if (!userId) {
+            return res.status(200).json({
+                success: true,
+                message: "Addresses fetched successfully",
+                data: [],
+            });
+        }
+
         const addresses = await addressService.getAddressesByUserId(userId);
 
         res.status(200).json({

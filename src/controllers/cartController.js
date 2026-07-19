@@ -4,6 +4,18 @@ exports.getCart = async (req, res) => {
   try {
     const { userId } = req.query;
 
+    if (!userId) {
+      return res.status(200).json({
+        success: true,
+        message: "Cart fetched successfully",
+        data: {
+          items: [],
+          totalQuantity: 0,
+          totalAmount: 0,
+        },
+      });
+    }
+
     const cart = await cartService.getCart(userId);
 
     res.status(200).json({
