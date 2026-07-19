@@ -2,14 +2,47 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 
+function validateSignupPayload({ firstName, lastName, email, password }) {
+  if (![firstName, lastName, email, password].every((value) => typeof value === "string" && value.trim())) {
+    return "First name, last name, email, and password are required";
+  }
+
+  if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+    return "Please provide a valid email address";
+  }
+
+  if (password.length < 6) {
+    return "Password must be at least 6 characters long";
+  }
+
+  return null;
+}
+
 exports.signup = async (req, res) => {
   try {
-    const { firstName, lastName, email, phone, password, role } = req.body;
+    const { firstName, lastName, email, phone, password } = req.body || {};
+    const validationError = validateSignupPayload({
+      firstName,
+      lastName,
+      email,
+      password,
+    });
 
-    const existingUser = await User.findOne({ where: { email } });
+    if (validationError) {
+      return res.status(400).json({
+        success: false,
+        message: validationError,
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existingUser = await User.findOne({
+      where: { email: normalizedEmail },
+    });
 
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
         message: "Email already registered",
       });
@@ -18,12 +51,12 @@ exports.signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      firstName,
-      lastName,
-      email,
-      phone,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: normalizedEmail,
+      phone: typeof phone === "string" ? phone.trim() : null,
       password: hashedPassword,
-      role: role || "USER",
+      role: "USER",
     });
 
     res.status(201).json({
@@ -49,9 +82,23 @@ exports.signup = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
 
-    const user = await User.findOne({ where: { email } });
+    if (
+      typeof email !== "string" ||
+      !email.trim() ||
+      typeof password !== "string" ||
+      !password
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    const user = await User.findOne({
+      where: { email: email.trim().toLowerCase() },
+    });
 
     if (!user) {
       return res.status(401).json({
